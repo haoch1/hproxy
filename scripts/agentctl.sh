@@ -11,9 +11,13 @@ die() { printf 'hproxy: %s\n' "$*" >&2; exit 1; }
 [ -f "$root/supervise.sh" ] && [ -f "$root/current/hproxy-agent" ] || die "agent installation is incomplete"
 
 service_kind() {
-  if [ "$system_install" = 1 ] && command -v systemctl >/dev/null 2>&1 && [ -f /etc/systemd/system/hproxy-agent.service ]; then
+  if [ "$system_install" = 1 ] && [ -f /etc/systemd/system/hproxy-agent.service ]; then
+    grep -Fx "ExecStart=$root/supervise.sh" /etc/systemd/system/hproxy-agent.service >/dev/null || die "systemd service belongs to another installation"
+    command -v systemctl >/dev/null 2>&1 || die "systemd service exists but systemctl is unavailable"
     printf systemd
-  elif [ "$system_install" = 1 ] && command -v rc-service >/dev/null 2>&1 && [ -f /etc/init.d/hproxy-agent ]; then
+  elif [ "$system_install" = 1 ] && [ -f /etc/init.d/hproxy-agent ]; then
+    grep -Fx "command=\"$root/supervise.sh\"" /etc/init.d/hproxy-agent >/dev/null || die "OpenRC service belongs to another installation"
+    command -v rc-service >/dev/null 2>&1 || die "OpenRC service exists but rc-service is unavailable"
     printf openrc
   else
     printf supervisor

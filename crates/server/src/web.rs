@@ -38,6 +38,7 @@ mod update_tests;
 #[path = "cleanup_tests.rs"]
 mod cleanup_tests;
 
+#[derive(Debug)]
 pub struct ApiError(pub StatusCode, pub String);
 impl IntoResponse for ApiError {
     fn into_response(self) -> Response {
