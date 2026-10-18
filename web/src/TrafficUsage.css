@@ -1,0 +1,10 @@
+.traffic-usage { width: 200px; min-height: 48px; font-size: 14px; line-height: 22px; font-variant-numeric: tabular-nums; }
+.traffic-usage > div:first-child { white-space: nowrap; font-size: 14px; font-weight: 400; }
+.traffic-usage > div:first-child > span { font: inherit; color: inherit; }
+.usage-meter { display: flex; align-items: center; gap: 10px; margin-top: 6px; }
+.usage-progress { height: 5px; flex: 1; min-width: 0; background: var(--subtle); border-radius: 3px; overflow: hidden; }
+.usage-progress > span { display: block; height: 100%; background: var(--chart-color); }
+.usage-progress > .warning { background: var(--warning); }
+.usage-progress > .exhausted { background: var(--danger); }
+.usage-meter small { flex-shrink: 0; min-width: 38px; text-align: right; color: var(--muted); font-size: 12px; line-height: 18px; }
+.usage-unlimited { display: block; margin-top: 6px; font-size: 12px; line-height: 18px; }

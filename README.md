@@ -1,0 +1,56 @@
+# hproxy
+
+hproxy 是面向 Linux 服务器的代理节点与端口转发控制台。主控提供 Web 面板和 SQLite 存储，子机 agent 主动连接主控，并运行项目管理的 sing-box 与 [Realm](vendor/realm/LICENSE) 补丁版。主控通过 Docker Compose 部署；agent 可在宿主机或 LXC 内原生安装，也可作为容器运行。
+
+## 功能
+
+- 管理 VLESS Reality、Shadowsocks 2022 节点及 TCP/UDP 转发。
+- 按节点或规则统计流量，设置额度与重置周期。
+- 同步服务器 IPv4/IPv6 变化，运行中重新解析落地域名；手动填写的地址保持不变。
+
+发布包和镜像支持 Linux amd64、arm64、armv7。需要 HTTPS 域名供 agent 连接主控；节点和转发使用的业务端口由服务器及网络环境放行。
+
+## 架构
+
+```mermaid
+flowchart LR
+    U["浏览器"] -->|HTTPS| P["反向代理"]
+    subgraph M["主控主机 · Docker"]
+        P -->|"本机 HTTP · 19080"| C["hproxy-server<br/>Web 面板 · API"]
+        C --- D[("SQLite 持久卷")]
+    end
+    subgraph N["子机 · Linux"]
+        A["hproxy-agent"] --> S["sing-box<br/>代理节点"]
+        A --> R["Realm<br/>端口转发"]
+    end
+    A -->|"HTTPS / WSS · 主动连接"| P
+```
+
+agent 主动接入主控并下载兼容发布包；管理通道不要求子机开放入站端口。
+## 快速开始
+
+在装有 Docker Engine 和 Compose 插件的 Linux 主机上：
+
+```bash
+git clone https://github.com/haoch1/hproxy.git
+cd hproxy
+cp .env.example .env
+# 将 .env 中的 HPROXY_PUBLIC_URL 改为实际的 HTTPS 面板地址
+docker compose pull
+read -rsp '设置管理员密码: ' HPROXY_PASSWORD; echo
+printf '%s' "$HPROXY_PASSWORD" | docker compose run --rm -T --no-deps \
+  --entrypoint /usr/local/bin/hproxy-server-init hproxy-server init
+unset HPROXY_PASSWORD
+docker compose up -d
+```
+
+管理员密码至少 12 字符。默认在本机 `127.0.0.1:19080` 监听，通过支持 WebSocket 的 HTTPS 反向代理对外提供面板。若端口被占用，修改 `.env` 中的 `HPROXY_PORT`。进入面板后在“服务器”页面添加子机，按面板给出的命令安装 agent。
+
+生产环境建议将 `HPROXY_IMAGE` 固定为[发布版本](https://github.com/haoch1/hproxy/releases)标签，升级前备份数据。`edge` 镜像跟随 `main`，用于测试。
+
+## 文档
+
+- [部署主控和 agent](docs/deployment.md)：HTTPS、Docker、Linux、LXC 与 Podman。
+- [运维与数据](docs/operations.md)：状态、备份、更新、回滚和卸载。
+
+源码位于 `crates/`、`web/`，项目补丁版 Realm 位于 `vendor/realm/`。发布流程见 [GitHub Actions](.github/workflows/ci-release.yml)。项目采用 [GPL-3.0-or-later](LICENSE)；第三方素材的许可声明保存在各自目录。

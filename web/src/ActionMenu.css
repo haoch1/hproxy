@@ -1,0 +1,39 @@
+.instance-menu-button { min-width: 76px; min-height: 34px; padding: 6px 10px; font-size: 14px; }
+.instance-menu-button > svg { width: 13px; height: 13px; }
+.context-menu.instance-menu {
+  position: fixed;
+  width: 224px;
+  max-width: calc(100vw - 16px);
+  border: 1px solid var(--border);
+  background: var(--surface);
+  color: var(--text);
+  z-index: 120;
+  overflow: auto;
+  overscroll-behavior: contain;
+  scrollbar-width: thin;
+  border-radius: 8px;
+  box-shadow: var(--shadow);
+  padding: 5px;
+}
+.context-menu button {
+  display: flex;
+  align-items: center;
+  justify-content: flex-start;
+  gap: 12px;
+  text-align: left;
+  padding: 8px 10px;
+  border: 0;
+  background: transparent;
+  border-radius: 4px;
+  width: 100%;
+  min-height: 36px;
+  font-size: 13px;
+  line-height: 20px;
+}
+.context-menu button:focus-visible { outline-offset: -2px; }
+.context-menu button svg { display: block; width: 16px; height: 16px; flex: 0 0 16px; transform: translateY(1px); }
+.context-menu hr { border: 0; border-top: 1px solid var(--border); margin: 4px -5px; }
+.context-menu .menu-title { font-size: 12px; color: var(--muted); padding: 7px 10px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.menu-power-actions { display: flex; gap: 4px; margin: 3px 0 6px; }
+.context-menu .menu-power-actions button { flex: 1; min-width: 0; width: auto; justify-content: center; gap: 5px; padding: 6px 4px; min-height: 32px; font-size: 12px; line-height: 18px; border: 1px solid var(--border); }
+.context-menu .menu-power-actions svg { width: 14px; height: 14px; flex-basis: 14px; }

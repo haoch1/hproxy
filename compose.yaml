@@ -1,0 +1,41 @@
+name: hproxy
+
+services:
+  hproxy-server:
+    image: ${HPROXY_IMAGE:-ghcr.io/haoch1/hproxy:latest}
+    container_name: hproxy-server
+    command:
+      - run
+      - --data
+      - /var/lib/hproxy/server
+      - --downloads
+      - /opt/hproxy/release
+      - --listen
+      - 0.0.0.0:${HPROXY_PORT:-19080}
+      - --public-url
+      - ${HPROXY_PUBLIC_URL:?Set HPROXY_PUBLIC_URL to the HTTPS origin}
+    ports:
+      - "${HPROXY_BIND_ADDRESS:-127.0.0.1}:${HPROXY_PORT:-19080}:${HPROXY_PORT:-19080}"
+    environment:
+      HPROXY_PORT: ${HPROXY_PORT:-19080}
+    volumes:
+      - hproxy-server-data:/var/lib/hproxy/server
+    read_only: true
+    tmpfs:
+      - /tmp:rw,nosuid,nodev,noexec,size=16m
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    init: true
+    restart: unless-stopped
+    stop_grace_period: 30s
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
+
+volumes:
+  hproxy-server-data:
+    name: hproxy-server-data
