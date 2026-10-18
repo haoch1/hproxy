@@ -80,7 +80,8 @@ jobs:
       - name: Build patched static Realm
         run: |
           cross build --manifest-path vendor/realm/Cargo.toml --release --locked \
-            --target "${{ matrix.target }}" --no-default-features --features default-ring --bin realm
+            --target "${{ matrix.target }}" --no-default-features \
+            --features proxy,balance,multi-thread,batched-udp,brutal-shutdown --bin realm
           cp "vendor/realm/target/${{ matrix.target }}/release/realm" "release-binaries/realm-${{ matrix.platform }}"
       - name: Fetch pinned static sing-box
         run: python3 scripts/fetch-sing-box.py --platform "${{ matrix.platform }}" --output release-binaries
