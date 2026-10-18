@@ -1,0 +1,200 @@
+name: Verify and publish
+
+on:
+  push:
+    branches: [main]
+    tags: ["v*"]
+  pull_request:
+  workflow_dispatch:
+  schedule:
+    - cron: "17 4 * * 1"
+
+concurrency:
+  group: publish-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+permissions:
+  contents: read
+
+jobs:
+  verify:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: npm
+          cache-dependency-path: web/package-lock.json
+      - name: Build dashboard
+        run: npm ci --prefix web && npm run build --prefix web
+      - name: Install Rust toolchain
+        uses: dtolnay/rust-toolchain@stable
+        with:
+          toolchain: "1.90.0"
+      - name: Test controller and agent
+        run: cargo test --workspace --locked
+      - name: Test release packaging
+        run: python3 -m unittest discover -s tests
+      - name: Test patched Realm data path
+        run: cargo test --manifest-path vendor/realm/Cargo.toml -p realm_core --no-default-features --features batched-udp --lib --locked
+      - uses: actions/upload-artifact@v4
+        if: github.event_name != 'pull_request'
+        with:
+          name: dashboard
+          path: web/dist/
+          retention-days: 3
+
+  binaries:
+    if: github.event_name != 'pull_request'
+    needs: verify
+    runs-on: ubuntu-24.04
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - platform: linux-amd64
+            target: x86_64-unknown-linux-musl
+          - platform: linux-arm64
+            target: aarch64-unknown-linux-musl
+          - platform: linux-armv7
+            target: armv7-unknown-linux-musleabihf
+    env:
+      RUSTUP_TOOLCHAIN: "1.90.0"
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: dashboard
+          path: web/dist/
+      - name: Install Rust target and cross
+        run: |
+          rustup target add "${{ matrix.target }}"
+          cargo install cross --version 0.2.5 --locked
+      - name: Build static controller and agent
+        run: |
+          cross build --release --locked --target "${{ matrix.target }}" --package hproxy-server --package hproxy-agent
+          mkdir -p release-binaries
+          cp "target/${{ matrix.target }}/release/hproxy-server" "release-binaries/hproxy-server-${{ matrix.platform }}"
+          cp "target/${{ matrix.target }}/release/hproxy-agent" "release-binaries/hproxy-agent-${{ matrix.platform }}"
+      - name: Build patched static Realm
+        run: |
+          cross build --manifest-path vendor/realm/Cargo.toml --release --locked \
+            --target "${{ matrix.target }}" --no-default-features --features default-ring --bin realm
+          cp "vendor/realm/target/${{ matrix.target }}/release/realm" "release-binaries/realm-${{ matrix.platform }}"
+      - name: Fetch pinned static sing-box
+        run: python3 scripts/fetch-sing-box.py --platform "${{ matrix.platform }}" --output release-binaries
+      - uses: actions/upload-artifact@v4
+        with:
+          name: binaries-${{ matrix.platform }}
+          path: release-binaries/
+          retention-days: 3
+          compression-level: 0
+
+  package:
+    if: github.event_name != 'pull_request'
+    needs: binaries
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          pattern: binaries-linux-*
+          merge-multiple: true
+          path: release-binaries/
+      - name: Validate all architectures and build release
+        run: python3 scripts/package-release.py --input release-binaries --output release-bundle
+      - uses: actions/upload-artifact@v4
+        with:
+          name: release-bundle
+          path: release-bundle/
+          retention-days: 7
+          compression-level: 0
+
+  images:
+    if: github.event_name != 'pull_request'
+    needs: package
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: read
+      packages: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: release-bundle/
+      - uses: docker/setup-qemu-action@v3
+      - uses: docker/setup-buildx-action@v3
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Controller image metadata
+        id: controller
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Agent image metadata
+        id: agent
+        uses: docker/metadata-action@v5
+        with:
+          images: ghcr.io/${{ github.repository }}-agent
+          tags: |
+            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+      - name: Publish controller
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.controller.outputs.tags }}
+          labels: ${{ steps.controller.outputs.labels }}
+          cache-from: type=gha,scope=controller
+          cache-to: type=gha,scope=controller,mode=max
+      - name: Publish containerized agent
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: Dockerfile.agent
+          platforms: linux/amd64,linux/arm64,linux/arm/v7
+          push: true
+          tags: ${{ steps.agent.outputs.tags }}
+          labels: ${{ steps.agent.outputs.labels }}
+          cache-from: type=gha,scope=agent
+          cache-to: type=gha,scope=agent,mode=max
+
+  release:
+    if: startsWith(github.ref, 'refs/tags/v')
+    needs: [package, images]
+    runs-on: ubuntu-24.04
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: release-bundle
+          path: release-bundle/
+      - name: Create versioned Linux package
+        run: |
+          tar -C release-bundle -czf "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" .
+          sha256sum "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" > "hproxy-${GITHUB_REF_NAME}-linux.tar.gz.sha256"
+      - name: Publish GitHub Release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}" \
+            "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" \
+            "hproxy-${GITHUB_REF_NAME}-linux.tar.gz.sha256" \
+            --verify-tag --title "hproxy ${GITHUB_REF_NAME}" --generate-notes
