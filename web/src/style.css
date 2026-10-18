@@ -455,7 +455,7 @@ main {
 }
 .summary-strip {
   display: grid;
-  grid-template-columns: repeat(4, 1fr);
+  grid-template-columns: repeat(3, minmax(0, 1fr));
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 8px;
@@ -639,13 +639,10 @@ td strong {
   font-size: 13px;
 }
 .server-table th:first-child {
-  width: 29%;
+  width: 34%;
 }
 .server-table th:nth-child(2) {
-  width: 19%;
-}
-.server-table th:nth-child(3) {
-  width: 25%;
+  width: 18%;
 }
 .server-table td {
   padding-top: 19px;
@@ -2190,7 +2187,7 @@ details[open] > .param-summary > span > svg {
     width: 220px;
   }
   .server-table {
-    min-width: 760px;
+    min-width: 720px;
   }
   .panel-header {
     padding-left: 18px;
@@ -2254,17 +2251,11 @@ details[open] > .param-summary > span > svg {
     display: none;
   }
   .summary-strip {
-    grid-template-columns: 1fr 1fr;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
     padding: 0;
   }
   .summary-item {
-    padding: 17px 20px;
-  }
-  .summary-item:nth-child(2) {
-    border: none;
-  }
-  .summary-item:nth-child(-n + 2) {
-    border-bottom: 1px solid var(--border);
+    padding: 17px 12px;
   }
   .metric-value {
     font-size: 25px;
@@ -2293,10 +2284,10 @@ details[open] > .param-summary > span > svg {
     display: inline-flex;
   }
   .server-table {
-    min-width: 730px;
+    min-width: 720px;
   }
   .server-table th:first-child {
-    width: 28%;
+    width: 34%;
   }
   .server-table td {
     padding: 17px 15px;

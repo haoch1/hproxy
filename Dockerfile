@@ -1,18 +1,10 @@
 # Build context must contain the verified output of scripts/package-release.py
 # as release-bundle/. The image runs the controller only; agents remain separate.
 FROM alpine:3.22 AS release
-ARG TARGETARCH
-ARG TARGETVARIANT
 COPY release-bundle/ /bundle/
 RUN set -eu; \
-    case "${TARGETARCH}/${TARGETVARIANT}" in \
-      amd64/*) platform=linux-amd64 ;; \
-      arm64/*) platform=linux-arm64 ;; \
-      arm/v7) platform=linux-armv7 ;; \
-      *) echo "Unsupported image platform: ${TARGETARCH}/${TARGETVARIANT}" >&2; exit 1 ;; \
-    esac; \
-    cp "/bundle/hproxy-server-${platform}" /hproxy-server; \
-    rm /bundle/hproxy-server-linux-* /bundle/SHA256SUMS-server-linux-*; \
+    cp /bundle/hproxy-server-linux-amd64 /hproxy-server; \
+    rm /bundle/hproxy-server-linux-amd64 /bundle/SHA256SUMS-server-linux-amd64; \
     chmod 0555 /hproxy-server
 
 FROM alpine:3.22

@@ -1,4 +1,4 @@
-use super::{query_log_page, query_logs, query_month_traffic, Filter};
+use super::{query_log_page, query_logs, Filter};
 use crate::db;
 use rusqlite::{params, Connection};
 
@@ -56,43 +56,6 @@ fn pagination_counts_filtered_logs_and_clamps_missing_pages() {
         }
     )
     .is_err());
-}
-
-#[test]
-fn month_traffic_uses_beijing_calendar_and_same_scope_for_all_servers() {
-    let (_dir, c) = fixture();
-    let millis = |date: &str| {
-        chrono::DateTime::parse_from_rfc3339(date)
-            .unwrap()
-            .timestamp_millis()
-    };
-    let start = millis("2026-10-01T00:00:00+08:00");
-    for (at, agent, resource, upload, download) in [
-        (start - 3_600_000, "server-a", "node", 900, 900),
-        (start, "server-a", "node", 10, 20),
-        (start + 3_600_000, "server-b", "node", 30, 40),
-        (start, "server-a", "forward", 500, 500),
-        (
-            millis("2026-11-01T00:00:00+08:00"),
-            "server-a",
-            "node",
-            900,
-            900,
-        ),
-    ] {
-        c.execute(
-            "INSERT INTO traffic VALUES(?,?,?,?,?)",
-            params![at, agent, resource, upload, download],
-        )
-        .unwrap();
-    }
-    let totals = query_month_traffic(&c, millis("2026-10-31T23:59:59+08:00")).unwrap();
-    assert_eq!(totals.get("server-a"), Some(&30));
-    assert_eq!(totals.get("server-b"), Some(&70));
-    assert_eq!(totals.values().sum::<u64>(), 100);
-    let first_hour = query_month_traffic(&c, start).unwrap();
-    assert_eq!(first_hour.get("server-a"), Some(&30));
-    assert!(!first_hour.contains_key("server-b"));
 }
 
 fn fixture() -> (tempfile::TempDir, Connection) {

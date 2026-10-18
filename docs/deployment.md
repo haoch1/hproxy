@@ -24,7 +24,7 @@ panel.example.com {
 
 ## 子机：原生 Linux agent
 
-在面板“服务器”页面创建服务器，在目标 Linux 机器执行面板提供的一次性安装命令。agent 使用原生二进制，不需要在子机安装 Docker。它主动经 HTTPS/WebSocket 连接主控，管理通道无须开放子机入站端口；节点和转发的业务端口仍需放行。安装支持 amd64、arm64、armv7；脚本按可用环境使用 systemd、OpenRC 或自身监督进程。
+在面板“服务器”页面创建服务器，在目标 x86_64 Linux 机器执行面板提供的一次性安装命令。agent 使用原生二进制，不需要在子机安装 Docker。它主动经 HTTPS/WebSocket 连接主控，管理通道无须开放子机入站端口；节点和转发的业务端口仍需放行。安装支持 Intel/AMD x86_64；脚本按可用环境使用 systemd、OpenRC 或自身监督进程。
 
 面板生成的命令以 `wget -qO-` 下载安装脚本；子机只有 `curl` 时，将这一步替换为 `curl -fsSL`，保留后续的 `| sh -s -- ...` 及参数。安装凭据仅短时间有效，不要将完整命令发到公开场所。
 
@@ -47,4 +47,4 @@ LXC 与 NAT VPS 在各自的 Linux 系统内直接安装二进制 agent，并按
 
 ## 支持范围
 
-CI 构建并验证三种 Linux 架构的主控镜像和原生 agent 二进制，在 Linux 上测试主控、agent、Realm 及主控容器启动。Debian/Ubuntu、RHEL 系和 Alpine 使用对应服务管理方式；受限 LXC、旧内核、NAT 映射和 IPv6 公网连通性还需在目标环境验证。此项目不提供 Windows/macOS 服务端。落地使用域名时 Realm 会在运行中重新解析；公网 IP 变化不会自动修改运营商 DNS 记录。
+CI 构建并验证 amd64 主控镜像和 x86_64 原生 agent 二进制，在 Linux 上测试主控、agent、Realm 及主控容器启动。Debian/Ubuntu、RHEL 系和 Alpine 使用对应服务管理方式；受限 LXC、旧内核、NAT 映射和 IPv6 公网连通性还需在目标环境验证。此项目不提供 Windows/macOS 服务端。落地使用域名时 Realm 会在运行中重新解析；公网 IP 变化不会自动修改运营商 DNS 记录。

@@ -11,8 +11,6 @@ import urllib.request
 VERSION = "1.14.3"
 ARCHIVES = {
     "linux-amd64": ("amd64", "41fc81fd041134d4d7d850a928d7d2cde17a7d6563953f406b22d32a68bfab1f"),
-    "linux-arm64": ("arm64", "12d6d67a4edf0dd54590865b1f4f79cd09ae043a02d648e9d1b5fccc8446ee07"),
-    "linux-armv7": ("armv7", "8c0cf39dc51221a9df90d432f95825a3eef25a8513cc1e80e83f23caaa84cab7"),
 }
 
 

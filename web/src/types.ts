@@ -120,8 +120,6 @@ export interface Overview {
   agents: Agent[];
   nodes: number;
   forwards: number;
-  month_total: number;
-  month_traffic: Record<string, number>;
 }
 export interface Traffic {
   at: number;

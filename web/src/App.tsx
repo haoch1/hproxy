@@ -76,8 +76,6 @@ export function App() {
     agents: [],
     nodes: 0,
     forwards: 0,
-    month_total: 0,
-    month_traffic: {},
   });
   const [resources, setResources] = useState<Resource[]>([]),
     [counters, setCounters] = useState<Record<string, Counter>>({});
@@ -467,15 +465,10 @@ export function App() {
                     />
                     <Summary label="代理节点" value={overview.nodes} />
                     <Summary label="转发规则" value={overview.forwards} />
-                    <Summary
-                      label="本月合计流量"
-                      value={bytes(overview.month_total)}
-                    />
                   </div>
                   <ServerTable
                     agents={overview.agents}
                     resources={resources}
-                    monthlyTraffic={overview.month_traffic}
                     onManage={setDetail}
                     onCreate={(kind, id) => void create(kind, id)}
                     onToggle={toggleAgent}
@@ -777,7 +770,6 @@ function CoreBadge({
 function ServerTable({
   agents,
   resources,
-  monthlyTraffic,
   onManage,
   onCreate,
   onToggle,
@@ -788,7 +780,6 @@ function ServerTable({
 }: {
   agents: Agent[];
   resources: Resource[];
-  monthlyTraffic: Record<string, number>;
   onManage: (id: string) => void;
   onCreate: (kind: "vless" | "forward", id: string) => void;
   onToggle: (agent: Agent) => void;
@@ -829,7 +820,6 @@ function ServerTable({
       </div>
       {filtered.length ? (
         <>
-        <p className="mobile-table-hint">左右滑动查看核心、流量与操作</p>
         <div className="table-scroll">
           <table className="server-table">
             <thead>
@@ -837,14 +827,12 @@ function ServerTable({
                 <th>服务器 / 地址</th>
                 <th>状态</th>
                 <th>核心服务</th>
-                <th>本月合计流量</th>
                 <th className="action-column">操作</th>
               </tr>
             </thead>
             <tbody>
               {filtered.map((a) => {
                 const assigned = resources.filter((r) => r.agent_id === a.id);
-                const used = monthlyTraffic[a.id] || 0;
                 return (
                   <tr key={a.id}>
                     <td>
@@ -892,9 +880,6 @@ function ServerTable({
                         }{" "}
                         条转发
                       </div>
-                    </td>
-                    <td className="tabular">
-                      <strong className="normal-weight">{bytes(used)}</strong>
                     </td>
                     <td className="action-column">
                       <ActionMenu label={a.name}>

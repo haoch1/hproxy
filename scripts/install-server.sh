@@ -33,7 +33,7 @@ case "$root/" in "$data/"*) die '程序目录不能位于数据目录内';; esac
 case "$data/" in "$root/"*) die '数据目录不能位于程序目录内';; esac
 case "$listen" in *[!A-Za-z0-9.:\[\]-]*) die '监听地址格式无效';; esac
 [ ! -e "$root/current" ] || die '主控已安装，请在面板设置中更新'
-case "$(uname -m)" in x86_64|amd64) arch=linux-amd64;; aarch64|arm64) arch=linux-arm64;; armv7l|armv7) arch=linux-armv7;; *) die '不支持当前架构';; esac
+case "$(uname -m)" in x86_64|amd64) arch=linux-amd64;; *) die '主控安装包仅支持 x86_64（Intel/AMD）';; esac
 command -v sha256sum >/dev/null 2>&1 || die '需要 sha256sum'
 verify() {
   platform=$1 count=0
@@ -47,7 +47,7 @@ verify() {
   (cd "$release" && sha256sum -c "SHA256SUMS-$platform") || die '文件校验失败'
   [ -f "$release/manifest-$platform.json" ] || die '缺少发布清单'
 }
-for platform in linux-amd64 linux-arm64 linux-armv7; do verify "$platform"; done
+verify "$arch"
 [ "$(wc -l < "$release/SHA256SUMS-server-$arch" | tr -d ' ')" = 1 ] || die '主控校验清单无效'
 read -r server_hash server_file extra < "$release/SHA256SUMS-server-$arch"
 [ "$server_file" = "hproxy-server-$arch" ] && [ -z "${extra:-}" ] || die '主控文件名无效'
@@ -66,7 +66,7 @@ if [ -n "$update_ca" ]; then
 fi
 cp "$release/uninstall-server.sh" "$root/uninstall.sh"; chmod 700 "$root/uninstall.sh"
 cp "$release/hproxy-server-$arch" "$next/hproxy-server"; chmod 700 "$next/hproxy-server"
-for platform in linux-amd64 linux-arm64 linux-armv7; do
+for platform in "$arch"; do
   for file in "manifest-$platform.json" "SHA256SUMS-$platform" "hproxy-agent-$platform" "sing-box-$platform" "realm-$platform"; do
     cp "$release/$file" "$downloads/releases/$build/$file"
   done

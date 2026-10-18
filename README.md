@@ -15,8 +15,8 @@ Web 面板使用 React、TypeScript 和 Vite；主控与 agent 使用 Rust，主
 
 | 组件 | 运行方式 | 需要准备 |
 | --- | --- | --- |
-| 主控 | Linux 上的 Docker Compose | Docker Engine、Compose 插件、可供子机访问的 HTTPS 域名及反向代理 |
-| 子机 | Linux 原生二进制 | amd64、arm64 或 armv7；`wget` 和 `sha256sum`（只有 `curl` 时可替换面板命令中的下载步骤） |
+| 主控 | amd64 Linux 上的 Docker Compose | Docker Engine、Compose 插件、可供子机访问的 HTTPS 域名及反向代理 |
+| 子机 | x86_64 Linux 原生二进制（Intel/AMD） | `wget` 和 `sha256sum`（只有 `curl` 时可替换面板命令中的下载步骤） |
 
 主控默认使用 `19080`，仅绑定宿主机 `127.0.0.1`。反向代理需要转发 WebSocket、SSE 和 `/downloads/`；子机经 HTTPS/WebSocket 主动连接主控，无须为管理通道开放子机入站端口。节点和转发规则使用的业务端口仍须在服务器防火墙、云防火墙及 NAT 映射中放行。主控及子机都只支持 Linux 部署。
 
@@ -49,7 +49,7 @@ docker compose logs --tail 100 hproxy-server
 
 ## 接入子机
 
-在面板的“服务器”页面添加服务器，然后在该 Linux 子机执行面板生成的一次性安装命令。安装器会识别 CPU 架构，从主控下载并校验 agent 二进制；安装凭据有效期为 10 分钟，不要将命令或凭据公开。主控镜像已包含子机所需的安装文件，不需要 GitHub Release 或单独的 agent 镜像。
+在面板的“服务器”页面添加服务器，然后在该 x86_64 Linux 子机执行面板生成的一次性安装命令。安装器会检查 CPU 架构，从主控下载并校验 agent 二进制；安装凭据有效期为 10 分钟，不要将命令或凭据公开。主控镜像已包含子机所需的安装文件，不需要 GitHub Release 或单独的 agent 镜像。
 
 系统安装会使用 systemd 或 OpenRC；没有这两者时启动自身监督进程，需按所在环境配置开机自启。接入后可在子机执行：
 

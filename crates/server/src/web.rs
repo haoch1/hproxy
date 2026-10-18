@@ -726,26 +726,9 @@ async fn overview(State(app): State<App>) -> Api<Value> {
     let c = app.connection();
     let agents = db::list_agents(&c)?;
     let resources = visible_resources(&c)?;
-    let monthly = query_month_traffic(&c, now())?;
-    let total: u64 = monthly.values().sum();
     Ok(Json(
-        json!({"agents":agents,"nodes":resources.iter().filter(|r|!r.is_forward()).count(),"forwards":resources.iter().filter(|r|r.is_forward()).count(),"month_total":total,"month_traffic":monthly}),
+        json!({"agents":agents,"nodes":resources.iter().filter(|r|!r.is_forward()).count(),"forwards":resources.iter().filter(|r|r.is_forward()).count()}),
     ))
-}
-fn query_month_traffic(
-    c: &rusqlite::Connection,
-    at: i64,
-) -> Result<std::collections::BTreeMap<String, u64>> {
-    let mut query = c.prepare(
-        "SELECT agent_id,SUM(upload+download) FROM traffic
-         WHERE hour>=CAST(strftime('%s',?1/1000,'unixepoch','+8 hours','start of month','-8 hours') AS INTEGER)*1000
-           AND hour<=?1 AND resource_id IN (SELECT id FROM resource_types WHERE kind!='forward')
-         GROUP BY agent_id",
-    )?;
-    let rows = query
-        .query_map([at], |r| Ok((r.get(0)?, r.get(1)?)))?
-        .collect::<rusqlite::Result<_>>()?;
-    Ok(rows)
 }
 async fn jobs(State(app): State<App>) -> Api<Value> {
     let c = app.connection();
@@ -1165,7 +1148,7 @@ async fn agent_socket(app: App, mut socket: WebSocket, agent: String, hash: Stri
 #[folder = "../../web/dist/"]
 struct Assets;
 async fn download_file(State(app): State<App>, Path(file): Path<String>) -> Response {
-    let valid = ["linux-amd64", "linux-arm64", "linux-armv7"]
+    let valid = hproxy_common::release::PLATFORMS
         .iter()
         .any(|platform| {
             [

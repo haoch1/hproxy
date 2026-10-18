@@ -1,7 +1,7 @@
 use anyhow::Result;
 use serde::{Deserialize, Serialize};
 
-pub const PLATFORMS: &[&str] = &["linux-amd64", "linux-arm64", "linux-armv7"];
+pub const PLATFORMS: &[&str] = &["linux-amd64"];
 #[derive(Debug, Clone, Deserialize, Serialize)]
 pub struct Artifact {
     pub file: String,
@@ -50,8 +50,6 @@ pub fn platform() -> Option<&'static str> {
     }
     match std::env::consts::ARCH {
         "x86_64" => Some("linux-amd64"),
-        "aarch64" => Some("linux-arm64"),
-        "arm" => Some("linux-armv7"),
         _ => None,
     }
 }

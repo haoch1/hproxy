@@ -9,7 +9,7 @@ import shutil
 import struct
 import tomllib
 
-PLATFORMS = {"linux-amd64": (2, 62), "linux-arm64": (2, 183), "linux-armv7": (1, 40)}
+PLATFORMS = {"linux-amd64": (2, 62)}
 ROLES = ("hproxy-agent", "sing-box", "realm", "hproxy-server")
 
 
@@ -44,7 +44,7 @@ def sha256(path):
 
 def main():
     parser = argparse.ArgumentParser(description=__doc__)
-    parser.add_argument("--input", type=Path, required=True, help="12 prebuilt binaries named <role>-<platform>")
+    parser.add_argument("--input", type=Path, required=True, help="four static linux-amd64 binaries")
     parser.add_argument("--output", type=Path, required=True, help="new, empty release directory")
     args = parser.parse_args()
     root = Path(__file__).resolve().parents[1]
@@ -72,7 +72,8 @@ def main():
             artifacts[role] = {"file": file, "sha256": sha256(path), "bytes": size, "version": versions[role]}
         sums = "".join(f"{artifacts[role]['sha256']}  {artifacts[role]['file']}\n" for role in ROLES[:3])
         build = hashlib.sha256(sums.encode()).hexdigest()
-        manifests[platform] = ({"schema": 1, "build": build, "version": version, "agent": artifacts[ROLES[0]], "sing_box": artifacts[ROLES[1]], "realm": artifacts[ROLES[2]], "server": artifacts[ROLES[3]]}, sums)
+        manifest = {"schema": 1, "build": build, "version": version, "agent": artifacts[ROLES[0]], "sing_box": artifacts[ROLES[1]], "realm": artifacts[ROLES[2]], "server": artifacts[ROLES[3]]}
+        manifests[platform] = (manifest, sums)
     args.output.mkdir(parents=True, exist_ok=False)
     for platform, (manifest, sums) in manifests.items():
         (args.output / f"manifest-{platform}.json").write_text(json.dumps(manifest, separators=(",", ":")) + "\n", encoding="utf-8")

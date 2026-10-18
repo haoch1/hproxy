@@ -487,10 +487,42 @@ tbody tr:not(.log-placeholder):hover { background: color-mix(in srgb, var(--subt
   main { padding: 20px 16px 28px; }
   .panel-header, .toolbar { padding-inline: 16px; }
   .summary-item { padding-inline: 18px; }
-  .server-table { min-width: 820px; table-layout: fixed; }
+  .server-table { min-width: 720px; table-layout: fixed; }
   .server-table th:first-child { width: 248px; }
   .server-table .server-name > div { min-width: 0; }
   .server-table .agent-addresses code { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+}
+@media (max-width: 600px) {
+  .server-panel .table-scroll { overflow: visible; }
+  .server-table, .server-table tbody { display: block; width: 100%; min-width: 0; }
+  .server-table thead { display: none; }
+  .server-table tbody tr {
+    display: grid; grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px 10px; padding: 16px;
+    border-bottom: 1px solid var(--border);
+  }
+  .server-table tbody tr:last-child { border-bottom: 0; }
+  .server-table td { display: block; min-width: 0; width: auto; padding: 0; border: 0; }
+  .server-table td:first-child { grid-column: 1 / -1; }
+  .server-table td:nth-child(2) { grid-column: 1; grid-row: 2; }
+  .server-table td:nth-child(3) {
+    grid-column: 1 / -1; grid-row: 3;
+    padding-top: 12px; border-top: 1px solid var(--border);
+  }
+  .server-table td.action-column {
+    grid-column: 2; grid-row: 2; align-self: start;
+    min-width: 0; width: auto; text-align: right; border-left: 0;
+  }
+  .server-table .server-name > div { min-width: 0; }
+  .server-table .name-button {
+    display: block; max-width: 100%; overflow: hidden;
+    text-overflow: ellipsis; white-space: nowrap; text-align: left;
+  }
+}
+@media (max-width: 360px) {
+  .summary-strip .summary-item { padding-inline: 8px; }
+  .summary-strip .metric-label { font-size: 11px; white-space: nowrap; }
+  .summary-strip .metric-value { font-size: 22px; white-space: nowrap; }
 }
 @media (max-width: 600px) {
   .mobile-table-hint { display: block; margin: 0; padding: 8px 16px; color: var(--muted); font-size: 12px; line-height: 18px; }

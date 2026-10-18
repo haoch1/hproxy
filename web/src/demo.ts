@@ -7,7 +7,6 @@ import type {
   Spec,
   Traffic,
 } from "./types";
-import { rangeStart } from "./traffic";
 import { primaryAddress, forwardListen } from "./types";
 import { demoConfig } from "./demoConfig";
 import type { QuotaBaseline } from "./types";
@@ -146,7 +145,7 @@ function seed(): DemoState {
       applied: 8,
       last_seen: now,
       version: "0.1.0",
-      platform: "linux / aarch64 · LXC",
+      platform: "linux / x86_64 · LXC",
       enrolled: true,
       error: null,
       cores: [
@@ -689,26 +688,10 @@ export async function demoApi<T>(
     const resources = state.resources.filter((r) =>
       agents.some((a) => a.id === r.agent_id),
     );
-    const month_traffic = Object.fromEntries(
-      agents.map((a) => [
-        a.id,
-        traffic(
-          new URLSearchParams({
-            from: String(rangeStart("month")),
-            agent_id: a.id,
-          }),
-        ).reduce((n, r) => n + r.upload + r.download, 0),
-      ]),
-    );
     result = {
       agents,
       nodes: resources.filter((r) => r.spec.type !== "forward").length,
       forwards: resources.filter((r) => r.spec.type === "forward").length,
-      month_total: Object.values(month_traffic).reduce(
-        (n, value) => n + value,
-        0,
-      ),
-      month_traffic,
     };
   } else if (parts[0] === "generate")
     result =

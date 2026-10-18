@@ -33,7 +33,7 @@ esac
 case "$endpoint" in *[\'\"\`\ \;\|\&\$]*) die '主控地址无效';; esac
 case "$token" in *[!A-Za-z0-9_-]*) die '安装凭据格式无效';; esac
 [ "$(uname -s)" = Linux ] || die '子 agent 安装器仅支持 Linux'
-case "$(uname -m)" in x86_64|amd64) arch=linux-amd64;; aarch64|arm64) arch=linux-arm64;; armv7l|armv7) arch=linux-armv7;; *) die "暂不支持的架构: $(uname -m)";; esac
+case "$(uname -m)" in x86_64|amd64) arch=linux-amd64;; *) die "子 agent 安装包仅支持 x86_64（Intel/AMD），当前架构: $(uname -m)";; esac
 fetch() {
   if command -v curl >/dev/null 2>&1; then
     if [ -n "$ca" ]; then curl -fSL --retry 2 --connect-timeout 15 --max-time 300 --cacert "$ca" "$1" -o "$2"
