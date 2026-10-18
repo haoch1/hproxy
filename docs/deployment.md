@@ -12,9 +12,21 @@ docker compose logs --tail 100 hproxy-server
 
 主控容器和数据卷分别为 `hproxy-server`、`hproxy-server-data`。主控持久数据在容器内的 `/var/lib/hproxy/server`，更新容器不会删除数据卷。安装令牌、密码和备份文件均为敏感数据，不应公开。
 
+主控和反向代理位于同一台 Linux 主机时，可使用以下 Caddy 配置作为 HTTPS 入口；将域名改为 `.env` 中 `HPROXY_PUBLIC_URL` 的域名，并确保 DNS 指向反向代理、所需的 80/443 端口可访问：
+
+```caddyfile
+panel.example.com {
+    reverse_proxy 127.0.0.1:19080
+}
+```
+
+若使用已有的反向代理，应代理整个站点（包括 `/downloads/`），保留 WebSocket 和 SSE 长连接；修改 `HPROXY_PORT` 后同步修改代理上游端口。Caddy 的配置语法见[官方文档](https://caddyserver.com/docs/caddyfile/directives/reverse_proxy)。
+
 ## 子机：原生 Linux agent
 
 在面板“服务器”页面创建服务器，在目标 Linux 机器执行面板提供的一次性安装命令。agent 使用原生二进制，不需要在子机安装 Docker。它主动经 HTTPS/WebSocket 连接主控，管理通道无须开放子机入站端口；节点和转发的业务端口仍需放行。安装支持 amd64、arm64、armv7；脚本按可用环境使用 systemd、OpenRC 或自身监督进程。
+
+面板生成的命令以 `wget -qO-` 下载安装脚本；子机只有 `curl` 时，将这一步替换为 `curl -fsSL`，保留后续的 `| sh -s -- ...` 及参数。安装凭据仅短时间有效，不要将完整命令发到公开场所。
 
 原生安装的程序与数据分开：`/opt/hproxy/agent` 存放程序及核心，`/var/lib/hproxy/agent` 存放身份、配置、流量和日志。使用 `--user` 安装时，分别位于 `~/.local/share/hproxy/agent` 和 `~/.local/state/hproxy/agent`。项目核心与系统中已有的 sing-box、Realm 文件独立，但相同监听端口仍会冲突。
 
