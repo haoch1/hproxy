@@ -2,7 +2,7 @@
 
 ## 主控：Docker Compose
 
-需要 Linux、Docker Engine 与 Compose 插件，以及指向主控的 HTTPS 域名。按 [README](../README.md#快速开始) 初始化密码并启动。反向代理需支持 WebSocket、SSE 和 `/downloads/` 文件下载。默认只将主控的 `19080` 端口绑定到宿主机回环地址；更改端口只需设置 `.env` 中的 `HPROXY_PORT`。镜像由 `main` 自动构建，无须另行下载发布包。
+需要 Linux、Docker Engine 与 Compose 插件，以及指向主控的 HTTPS 域名。按 [README](../README.md#安装主控) 初始化密码并启动。反向代理需支持 WebSocket、SSE 和 `/downloads/` 文件下载。默认只将主控的 `19080` 端口绑定到宿主机回环地址；更改端口只需设置 `.env` 中的 `HPROXY_PORT`。镜像由 `main` 自动构建，无须另行下载发布包。
 
 ```sh
 docker compose ps
