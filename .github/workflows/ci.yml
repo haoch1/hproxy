@@ -130,7 +130,7 @@ jobs:
             type=raw,value=latest
             type=sha,format=long,prefix=sha-
       - name: Publish controller
-        uses: docker/build-push-action@v6
+        uses: docker/build-push-action@v7
         with:
           context: .
           file: Dockerfile
