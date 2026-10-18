@@ -726,4 +726,3 @@ hproxy 主控、agent、前端代码及项目脚本按仓库根目录的 [GPL-3.
 | Rust/npm 依赖 | `Cargo.lock` 与 `web/package-lock.json` 固定实际构建依赖 | 各依赖的上游许可文件 |
 
 自动发布的 OCI 镜像包含项目主控或 agent 二进制、Alpine 基础层及 CA 证书，并可能包含 sing-box/Realm 发布包。分发镜像或发布包时仍须遵守这些组件各自的许可条件；本页不是对第三方许可的重新授权。
-
