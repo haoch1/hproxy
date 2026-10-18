@@ -411,7 +411,7 @@ async fn remove_agent(State(app): State<App>, Path(id): Path<String>) -> Api<Val
     Ok(Json(json!({"ok":true,"cleanup":if enrolled {"queued"} else {"complete"},"request_id":request_id})))
 }
 // Manual fallback for an agent whose installation has already been removed on
-// its host (including OCI agents, which cannot remove their own container).
+// its host, or whose remote cleanup could not complete.
 // Never claim that this operation removed files from the remote machine.
 async fn remove_agent_record(State(app): State<App>, Path(id): Path<String>) -> Api<Value> {
     if app.sockets.lock().unwrap().contains_key(&id) {

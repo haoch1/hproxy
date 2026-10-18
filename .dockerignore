@@ -17,6 +17,4 @@ secrets
 .env*
 !release-bundle/**
 !Dockerfile
-!Dockerfile.agent
-!scripts/oci-agent-enroll.sh
 !scripts/oci-server-init.sh

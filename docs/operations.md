@@ -38,8 +38,6 @@ docker compose ps
 
 失败时将 `HPROXY_IMAGE` 改回更新前记录的 digest 或提交标签，重新执行 `docker compose up -d --no-deps hproxy-server`。如果数据库迁移不兼容，停机后使用升级前的备份恢复。原生 agent 用 `agentctl update` 检查主控镜像内的兼容安装文件，失败时保留或回退上一个健康版本；离线 agent 重连后再检查。
 
-容器 agent 由宿主更新。先保留原镜像标签和数据卷，再拉取新镜像并重建容器；需要回滚时用原标签重建。不要删除 `hproxy-agent-data` 卷。Podman 使用对应的 `podman pull/stop/rm/run` 命令。
-
 ## 卸载与清理
 
 ```sh
@@ -47,6 +45,6 @@ docker compose down
 sudo sh /opt/hproxy/agent/agentctl uninstall
 ```
 
-`docker compose down` 保留主控卷；原生 agent 卸载默认保留数据。确认已备份且不再使用后，才分别执行 `docker compose down --volumes` 或 `agentctl uninstall --purge-data`。容器 agent 先在宿主停止并删除容器，再决定是否删除 `hproxy-agent-data` 卷。
+`docker compose down` 保留主控卷；agent 卸载默认保留数据。确认已备份且不再使用后，才分别执行 `docker compose down --volumes` 或 `agentctl uninstall --purge-data`。
 
 程序版本仅保留当前和上一健康版本；自动备份与日志按限额轮转。手动备份不参与自动清理。卸载或升级不会清理其他程序安装的 sing-box/Realm；相同监听端口由管理员自行协调。

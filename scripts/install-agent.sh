@@ -32,7 +32,7 @@ case "$endpoint" in
 esac
 case "$endpoint" in *[\'\"\`\ \;\|\&\$]*) die '主控地址无效';; esac
 case "$token" in *[!A-Za-z0-9_-]*) die '安装凭据格式无效';; esac
-[ "$(uname -s)" = Linux ] || die '子 agent 安装器支持 Linux，包括 LXC 和 Linux 容器'
+[ "$(uname -s)" = Linux ] || die '子 agent 安装器仅支持 Linux'
 case "$(uname -m)" in x86_64|amd64) arch=linux-amd64;; aarch64|arm64) arch=linux-arm64;; armv7l|armv7) arch=linux-armv7;; *) die "暂不支持的架构: $(uname -m)";; esac
 fetch() {
   if command -v curl >/dev/null 2>&1; then
@@ -168,6 +168,6 @@ EOF
   chmod 755 /etc/init.d/hproxy-agent; rc-update add hproxy-agent default; rc-service hproxy-agent start
 else
   nohup "$root/supervise.sh" </dev/null >/dev/null 2>&1 &
-  printf '容器/无 init 环境已后台启动。容器启动入口可使用: %s\n' "$root/supervise.sh"
+  printf '无 init 环境已后台启动；请按所在系统配置开机执行: %s\n' "$root/supervise.sh"
 fi
 printf '%s\n' '安装完成，正在连接主控，核心将按面板选择自动安装，后续可在服务器设置中安装或卸载'

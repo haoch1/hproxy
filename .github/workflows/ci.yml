@@ -141,18 +141,6 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha,format=long,prefix=sha-
-      - name: Agent image metadata
-        id: agent
-        uses: docker/metadata-action@v5
-        with:
-          images: ghcr.io/${{ github.repository }}-agent
-          labels: |
-            org.opencontainers.image.title=hproxy-agent
-            org.opencontainers.image.description=Linux 代理节点与端口转发子 agent
-            org.opencontainers.image.source=https://github.com/${{ github.repository }}
-          tags: |
-            type=raw,value=latest
-            type=sha,format=long,prefix=sha-
       - name: Publish controller
         uses: docker/build-push-action@v6
         with:
@@ -164,18 +152,6 @@ jobs:
           labels: ${{ steps.controller.outputs.labels }}
           cache-from: type=gha,scope=controller
           cache-to: type=gha,scope=controller,mode=max
-      - name: Publish containerized agent
-        uses: docker/build-push-action@v6
-        with:
-          context: .
-          file: Dockerfile.agent
-          platforms: linux/amd64,linux/arm64,linux/arm/v7
-          push: true
-          tags: ${{ steps.agent.outputs.tags }}
-          labels: ${{ steps.agent.outputs.labels }}
-          cache-from: type=gha,scope=agent
-          cache-to: type=gha,scope=agent,mode=max
-
   smoke:
     if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: images
@@ -183,17 +159,19 @@ jobs:
     permissions:
       packages: read
     steps:
-      - name: Start published controller and check agent image
+      - name: Start controller and check native agent binary
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
           controller="ghcr.io/${GITHUB_REPOSITORY}:latest"
-          agent="ghcr.io/${GITHUB_REPOSITORY}-agent:latest"
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker pull "$controller"
-          docker pull "$agent"
-          docker run --rm --entrypoint /usr/local/bin/hproxy-agent "$agent" --version
+          bundle_container=$(docker create "$controller")
+          docker cp "$bundle_container:/opt/hproxy/release/hproxy-agent-linux-amd64" "$RUNNER_TEMP/hproxy-agent"
+          docker rm "$bundle_container"
+          chmod +x "$RUNNER_TEMP/hproxy-agent"
+          "$RUNNER_TEMP/hproxy-agent" --version
           docker volume create hproxy-server-smoke-data
           trap 'docker rm -f hproxy-server-smoke >/dev/null 2>&1 || true; docker volume rm hproxy-server-smoke-data >/dev/null 2>&1 || true' EXIT
           printf 'hproxy-smoke-password-123\n' | docker run --rm -i \

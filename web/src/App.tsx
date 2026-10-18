@@ -299,7 +299,7 @@ export function App() {
   const forgetAgent = (agent: Agent) =>
     confirmAction(
       "移除服务器记录",
-      "仅在已于子机停止并卸载 hproxy agent 或删除容器后使用。此操作只移除面板记录和下发配置，不清理远端文件；主控历史流量仍保留。",
+      "仅在已于子机停止并卸载 hproxy agent 后使用。此操作只移除面板记录和下发配置，不清理远端文件；主控历史流量仍保留。",
       async () => {
         await remove(`/agents/${agent.id}/record`);
         setDetail(null);

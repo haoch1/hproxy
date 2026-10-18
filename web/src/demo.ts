@@ -169,7 +169,7 @@ function seed(): DemoState {
       applied: 5,
       last_seen: now,
       version: "0.1.0",
-      platform: "linux / x86_64 · Podman",
+      platform: "linux / x86_64 · LXC",
       enrolled: true,
       error: null,
       cores: [
