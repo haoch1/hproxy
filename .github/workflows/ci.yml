@@ -3,9 +3,6 @@ name: Build and verify
 on:
   push:
     branches: [main]
-    paths-ignore:
-      - README.md
-      - docs/**
   pull_request:
   workflow_dispatch:
 
@@ -67,17 +64,6 @@ jobs:
         with:
           name: dashboard
           path: web/dist/
-      - name: Restore Rust build cache
-        uses: actions/cache@v4
-        with:
-          path: |
-            ~/.cargo/bin/cross
-            ~/.cargo/.crates2.json
-            ~/.cargo/registry
-            ~/.cargo/git
-            target/${{ matrix.target }}
-            vendor/realm/target/${{ matrix.target }}
-          key: linux-${{ matrix.platform }}-rust-1.90.0-${{ hashFiles('Cargo.lock', 'vendor/realm/Cargo.lock') }}
       - name: Install Rust target and cross
         run: |
           rustup target add "${{ matrix.target }}"
