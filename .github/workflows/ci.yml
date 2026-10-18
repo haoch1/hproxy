@@ -8,7 +8,7 @@ on:
 
 concurrency:
   group: publish-${{ github.ref }}
-  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+  cancel-in-progress: true
 
 permissions:
   contents: read
@@ -213,4 +213,3 @@ jobs:
             exit 1
           fi
           docker exec hproxy-server-smoke hproxy-server check --data /var/lib/hproxy/server
-
