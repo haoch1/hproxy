@@ -14,19 +14,14 @@ hproxy 是面向 Linux 服务器的代理节点与端口转发控制台。主控
 
 ```mermaid
 flowchart LR
-    U["浏览器"] -->|HTTPS| P["反向代理"]
-    subgraph M["主控主机 · Docker"]
-        P -->|"本机 HTTP · 19080"| C["hproxy-server<br/>Web 面板 · API"]
-        C --- D[("SQLite 持久卷")]
-    end
-    subgraph N["子机 · Linux"]
-        A["hproxy-agent"] --> S["sing-box<br/>代理节点"]
-        A --> R["Realm<br/>端口转发"]
-    end
-    A -->|"HTTPS / WSS · 主动连接"| P
+    B["浏览器"] -->|HTTPS| P["反向代理"]
+    A["Linux agent"] -->|HTTPS / WSS| P
+    P --> C["hproxy 主控"]
+    A --> K["sing-box / Realm"]
 ```
 
-agent 主动接入主控并下载兼容发布包；管理通道不要求子机开放入站端口。
+agent 主动接入主控；管理通道不要求子机开放入站端口。
+
 ## 快速开始
 
 在装有 Docker Engine 和 Compose 插件的 Linux 主机上：
