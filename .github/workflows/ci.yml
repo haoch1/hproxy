@@ -1,13 +1,10 @@
-name: Verify and publish
+name: Build and verify
 
 on:
   push:
     branches: [main]
-    tags: ["v*"]
   pull_request:
   workflow_dispatch:
-  schedule:
-    - cron: "17 4 * * 1"
 
 concurrency:
   group: publish-${{ github.ref }}
@@ -34,7 +31,7 @@ jobs:
           toolchain: "1.90.0"
       - name: Test controller and agent
         run: cargo test --workspace --locked
-      - name: Test release packaging
+      - name: Test agent package assembly
         run: python3 -m unittest discover -s tests
       - name: Test patched Realm data path
         run: cargo test --manifest-path vendor/realm/Cargo.toml -p realm_core --no-default-features --features batched-udp --lib --locked
@@ -46,7 +43,7 @@ jobs:
           retention-days: 3
 
   binaries:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: verify
     runs-on: ubuntu-24.04
     strategy:
@@ -93,7 +90,7 @@ jobs:
           compression-level: 0
 
   package:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: binaries
     runs-on: ubuntu-24.04
     steps:
@@ -103,7 +100,7 @@ jobs:
           pattern: binaries-linux-*
           merge-multiple: true
           path: release-binaries/
-      - name: Validate all architectures and build release
+      - name: Validate all architectures and assemble agent package
         run: python3 scripts/package-release.py --input release-binaries --output release-bundle
       - uses: actions/upload-artifact@v4
         with:
@@ -113,7 +110,7 @@ jobs:
           compression-level: 0
 
   images:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: package
     runs-on: ubuntu-24.04
     permissions:
@@ -142,10 +139,8 @@ jobs:
             org.opencontainers.image.description=Linux 代理节点与端口转发主控
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest
+            type=sha,format=long,prefix=sha-
       - name: Agent image metadata
         id: agent
         uses: docker/metadata-action@v5
@@ -156,10 +151,8 @@ jobs:
             org.opencontainers.image.description=Linux 代理节点与端口转发子 agent
             org.opencontainers.image.source=https://github.com/${{ github.repository }}
           tags: |
-            type=raw,value=edge,enable=${{ github.ref == 'refs/heads/main' }}
-            type=semver,pattern={{version}}
-            type=semver,pattern={{major}}.{{minor}}
-            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=latest
+            type=sha,format=long,prefix=sha-
       - name: Publish controller
         uses: docker/build-push-action@v6
         with:
@@ -184,7 +177,7 @@ jobs:
           cache-to: type=gha,scope=agent,mode=max
 
   smoke:
-    if: github.event_name != 'pull_request'
+    if: github.ref == 'refs/heads/main' && github.event_name != 'pull_request'
     needs: images
     runs-on: ubuntu-24.04
     permissions:
@@ -195,9 +188,8 @@ jobs:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          if [ "$GITHUB_REF_TYPE" = tag ]; then image_tag="${GITHUB_REF_NAME#v}"; else image_tag=edge; fi
-          controller="ghcr.io/${GITHUB_REPOSITORY}:${image_tag}"
-          agent="ghcr.io/${GITHUB_REPOSITORY}-agent:${image_tag}"
+          controller="ghcr.io/${GITHUB_REPOSITORY}:latest"
+          agent="ghcr.io/${GITHUB_REPOSITORY}-agent:latest"
           echo "$GH_TOKEN" | docker login ghcr.io -u "$GITHUB_ACTOR" --password-stdin
           docker pull "$controller"
           docker pull "$agent"
@@ -222,27 +214,3 @@ jobs:
           fi
           docker exec hproxy-server-smoke hproxy-server check --data /var/lib/hproxy/server
 
-  release:
-    if: startsWith(github.ref, 'refs/tags/v')
-    needs: [package, smoke]
-    runs-on: ubuntu-24.04
-    permissions:
-      contents: write
-    steps:
-      - uses: actions/checkout@v4
-      - uses: actions/download-artifact@v4
-        with:
-          name: release-bundle
-          path: release-bundle/
-      - name: Create versioned Linux package
-        run: |
-          tar -C release-bundle -czf "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" .
-          sha256sum "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" > "hproxy-${GITHUB_REF_NAME}-linux.tar.gz.sha256"
-      - name: Publish GitHub Release
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          gh release create "${GITHUB_REF_NAME}" \
-            "hproxy-${GITHUB_REF_NAME}-linux.tar.gz" \
-            "hproxy-${GITHUB_REF_NAME}-linux.tar.gz.sha256" \
-            --verify-tag --title "hproxy ${GITHUB_REF_NAME}" --generate-notes

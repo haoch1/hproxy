@@ -2,7 +2,7 @@
 
 ## 主控：Docker Compose
 
-需要 Linux、Docker Engine 与 Compose 插件，以及指向主控的 HTTPS 域名。按 [README](../README.md#快速开始) 初始化密码并启动。反向代理需支持 WebSocket、SSE 和 `/downloads/` 文件下载。默认只将主控的 `19080` 端口绑定到宿主机回环地址；更改端口只需设置 `.env` 中的 `HPROXY_PORT`。生产环境请固定镜像版本。
+需要 Linux、Docker Engine 与 Compose 插件，以及指向主控的 HTTPS 域名。按 [README](../README.md#快速开始) 初始化密码并启动。反向代理需支持 WebSocket、SSE 和 `/downloads/` 文件下载。默认只将主控的 `19080` 端口绑定到宿主机回环地址；更改端口只需设置 `.env` 中的 `HPROXY_PORT`。镜像由 `main` 自动构建，无须另行下载发布包。
 
 ```sh
 docker compose ps
@@ -33,10 +33,10 @@ sudo sh /opt/hproxy/agent/agentctl uninstall
 
 ## 子机：Docker / Podman 可选方式
 
-没有合适 init 环境时，可运行独立的 `hproxy-agent` 容器。示例使用与主控相同的版本标签；把 `panel.example.com` 换成实际面板域名：
+没有合适 init 环境时，可运行独立的 `hproxy-agent` 容器。示例使用与主控同一次构建的镜像；把 `panel.example.com` 换成实际面板域名：
 
 ```bash
-AGENT_IMAGE=ghcr.io/haoch1/hproxy-agent:0.1.0
+AGENT_IMAGE=ghcr.io/haoch1/hproxy-agent:latest
 docker volume create hproxy-agent-data
 read -rsp '一次性接入令牌: ' HPROXY_TOKEN; echo
 printf '%s' "$HPROXY_TOKEN" | docker run --rm -i --network host \
@@ -52,4 +52,4 @@ Podman 可用相同镜像、网络和卷参数，但需在目标机器验证 hos
 
 ## 支持范围
 
-CI 构建并验证三种 Linux 架构的发布包与镜像，在 Linux 上测试主控、agent、Realm 及容器启动。Debian/Ubuntu、RHEL 系和 Alpine 使用对应服务管理方式；受限 LXC、rootless Podman、旧内核、NAT 映射和 IPv6 公网连通性还需在目标环境验证。此项目不发布 Windows/macOS 服务端。落地使用域名时 Realm 会在运行中重新解析；公网 IP 变化不会自动修改运营商 DNS 记录。
+CI 构建并验证三种 Linux 架构的镜像及镜像内的 agent 安装文件，在 Linux 上测试主控、agent、Realm 及容器启动。Debian/Ubuntu、RHEL 系和 Alpine 使用对应服务管理方式；受限 LXC、rootless Podman、旧内核、NAT 映射和 IPv6 公网连通性还需在目标环境验证。此项目不提供 Windows/macOS 服务端。落地使用域名时 Realm 会在运行中重新解析；公网 IP 变化不会自动修改运营商 DNS 记录。

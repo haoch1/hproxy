@@ -27,15 +27,16 @@ chmod 600 "./backups/$backup_name"
 
 ## 更新与回滚
 
-主控先备份，再将 `.env` 的 `HPROXY_IMAGE` 设为目标版本：
+主控先备份，并记录当前镜像的 digest；`latest` 跟随 `main`，也可在 `.env` 中使用 `sha-<完整提交 SHA>` 标签固定到某次构建：
 
 ```sh
+docker image inspect ghcr.io/haoch1/hproxy:latest --format '{{index .RepoDigests 0}}'
 docker compose pull hproxy-server
 docker compose up -d --no-deps hproxy-server
 docker compose ps
 ```
 
-失败时将 `HPROXY_IMAGE` 改回原版本，重新执行 `docker compose up -d --no-deps hproxy-server`。如果数据库迁移不兼容，停机后使用升级前的备份恢复。原生 agent 用 `agentctl update` 检查兼容发布包，失败时保留或回退上一个健康版本；离线 agent 重连后再检查。
+失败时将 `HPROXY_IMAGE` 改回更新前记录的 digest 或提交标签，重新执行 `docker compose up -d --no-deps hproxy-server`。如果数据库迁移不兼容，停机后使用升级前的备份恢复。原生 agent 用 `agentctl update` 检查主控镜像内的兼容安装文件，失败时保留或回退上一个健康版本；离线 agent 重连后再检查。
 
 容器 agent 由宿主更新。先保留原镜像标签和数据卷，再拉取新镜像并重建容器；需要回滚时用原标签重建。不要删除 `hproxy-agent-data` 卷。Podman 使用对应的 `podman pull/stop/rm/run` 命令。
 

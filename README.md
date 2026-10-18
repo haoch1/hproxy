@@ -8,19 +8,7 @@ hproxy 是面向 Linux 服务器的代理节点与端口转发控制台。主控
 - 按节点或规则统计流量，设置额度与重置周期。
 - 同步服务器 IPv4/IPv6 变化，运行中重新解析落地域名；手动填写的地址保持不变。
 
-发布包和镜像支持 Linux amd64、arm64、armv7。需要 HTTPS 域名供 agent 连接主控；节点和转发使用的业务端口由服务器及网络环境放行。
-
-## 架构
-
-```mermaid
-flowchart LR
-    B["浏览器"] -->|HTTPS| P["反向代理"]
-    A["Linux agent"] -->|HTTPS / WSS| P
-    P --> C["hproxy 主控"]
-    A --> K["sing-box / Realm"]
-```
-
-agent 主动接入主控；管理通道不要求子机开放入站端口。
+镜像支持 Linux amd64、arm64、armv7，并内置对应的 agent 安装文件。agent 主动连接主控，无须开放管理通道的子机入站端口；节点和转发的业务端口仍需放行。
 
 ## 快速开始
 
@@ -41,11 +29,11 @@ docker compose up -d
 
 管理员密码至少 12 字符。默认在本机 `127.0.0.1:19080` 监听，通过支持 WebSocket 的 HTTPS 反向代理对外提供面板。若端口被占用，修改 `.env` 中的 `HPROXY_PORT`。进入面板后在“服务器”页面添加子机，按面板给出的命令安装 agent。
 
-生产环境建议将 `HPROXY_IMAGE` 固定为[发布版本](https://github.com/haoch1/hproxy/releases)标签，升级前备份数据。`edge` 镜像跟随 `main`，用于测试。
+`main` 更新后 GitHub Actions 自动构建 `latest` 镜像；升级前请备份数据，回滚时可使用对应提交的镜像标签。
 
 ## 文档
 
 - [部署主控和 agent](docs/deployment.md)：HTTPS、Docker、Linux、LXC 与 Podman。
 - [运维与数据](docs/operations.md)：状态、备份、更新、回滚和卸载。
 
-源码位于 `crates/`、`web/`，项目补丁版 Realm 位于 `vendor/realm/`。发布流程见 [GitHub Actions](.github/workflows/ci-release.yml)。项目采用 [GPL-3.0-or-later](LICENSE)；第三方素材的许可声明保存在各自目录。
+源码位于 `crates/`、`web/`，项目补丁版 Realm 位于 `vendor/realm/`。构建流程见 [GitHub Actions](.github/workflows/ci.yml)。项目采用 [GPL-3.0-or-later](LICENSE)；第三方素材的许可声明保存在各自目录。
